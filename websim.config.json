@@ -1,0 +1,92 @@
+{
+  "database": {
+    "schema": {
+      "users": {
+        "id": {
+          "type": "uuid",
+          "description": "User unique identifier"
+        },
+        "identity": {
+          "type": "text",
+          "description": "What the user wants to be"
+        },
+        "base_image_url": {
+          "type": "text",
+          "description": "AI generated base avatar image"
+        },
+        "evolution_level": {
+          "type": "integer",
+          "description": "Current evolution level"
+        },
+        "last_evolution": {
+          "type": "timestamptz",
+          "description": "Last time user evolved"
+        }
+      },
+      "datapoints": {
+        "id": {
+          "type": "uuid",
+          "description": "Datapoint unique identifier"
+        },
+        "name": {
+          "type": "text",
+          "description": "Name of the datapoint"
+        },
+        "data_type": {
+          "type": "text",
+          "description": "Type of data (number, string, date, etc)"
+        },
+        "value": {
+          "type": "text",
+          "description": "Serialized value of the datapoint"
+        },
+        "rarity": {
+          "type": "numeric",
+          "description": "Rarity score 0-1"
+        },
+        "visual_properties": {
+          "type": "jsonb",
+          "description": "Visual effect properties derived from data"
+        }
+      },
+      "user_datapoints": {
+        "id": {
+          "type": "text",
+          "description": "user_id + datapoint_id for uniqueness"
+        },
+        "user_id": {
+          "type": "uuid",
+          "description": "Reference to user"
+        },
+        "datapoint_id": {
+          "type": "uuid",
+          "description": "Reference to datapoint"
+        },
+        "acquired_at": {
+          "type": "timestamptz",
+          "description": "When user acquired this datapoint"
+        },
+        "visual_intensity": {
+          "type": "numeric",
+          "description": "How strong the visual effect is (0-1)"
+        }
+      },
+      "queue": {
+        "id": {
+          "type": "uuid",
+          "description": "Queue entry ID"
+        },
+        "status": {
+          "type": "text",
+          "description": "waiting, generating, completed"
+        },
+        "queue_position": {
+          "type": "integer",
+          "description": "Position in queue"
+        }
+      }
+    },
+    "instructions": "This game procedurally generates datapoints and visual effects. Users evolve by collecting datapoints that modify their appearance through dynamic visual effects."
+  }
+}
+
