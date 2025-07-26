@@ -12,6 +12,8 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [userAvatar, setUserAvatar] = useState(null);
   const [lastEvolution, setLastEvolution] = useState(null);
+  const [evolutionCooldown, setEvolutionCooldown] = useState(null);
+  const [isEvolutionOnCooldown, setIsEvolutionOnCooldown] = useState(false);
   const { data: userData, loading: userLoading } = useQuery(
     currentUser ? room.collection("users").filter({ id: currentUser.id }) : null
   );
@@ -52,6 +54,29 @@ function App() {
       }
     }
   }, [userDatapoints]);
+  useEffect(() => {
+    if (userAvatar && userAvatar.last_evolution) {
+      checkEvolutionCooldown();
+      const interval = setInterval(checkEvolutionCooldown, 1e3);
+      return () => clearInterval(interval);
+    }
+  }, [userAvatar]);
+  function checkEvolutionCooldown() {
+    if (!userAvatar || !userAvatar.last_evolution) return;
+    const lastEvolution2 = new Date(userAvatar.last_evolution);
+    const now = /* @__PURE__ */ new Date();
+    const timeSinceLastEvolution = now - lastEvolution2;
+    const minutesSinceLastEvolution = timeSinceLastEvolution / (1e3 * 60);
+    const cooldownMinutes = 5;
+    const remainingTime = cooldownMinutes - minutesSinceLastEvolution;
+    if (remainingTime <= 0) {
+      setEvolutionCooldown(null);
+      setIsEvolutionOnCooldown(false);
+    } else {
+      setEvolutionCooldown(remainingTime);
+      setIsEvolutionOnCooldown(true);
+    }
+  }
   async function initializeUser() {
     try {
       const user = await window.websim.getCurrentUser();
@@ -75,18 +100,32 @@ function App() {
     }
   }
   async function handleEvolution() {
-    if (!currentUser) return;
+    if (!currentUser || isEvolutionOnCooldown) return;
     try {
       const result = await dbManager.evolveUser(currentUser.id);
       if (result.canEvolve) {
         setLastEvolution(result.newDatapoint);
+        setUserAvatar((prev) => ({
+          ...prev,
+          evolution_level: result.user.evolution_level,
+          last_evolution: result.user.last_evolution
+        }));
         showEvolutionNotification(result.newDatapoint);
       } else {
-        console.log(`Cannot evolve yet. Wait ${Math.ceil(result.timeRemaining)} more minutes.`);
+        setEvolutionCooldown(result.timeRemaining);
+        setIsEvolutionOnCooldown(true);
       }
     } catch (error) {
       console.error("Evolution failed:", error);
     }
+  }
+  function formatCooldownTime(minutes) {
+    if (minutes < 1) {
+      return `${Math.ceil(minutes * 60)}s`;
+    }
+    const mins = Math.floor(minutes);
+    const secs = Math.ceil((minutes - mins) * 60);
+    return `${mins}m ${secs}s`;
   }
   function showEvolutionNotification(datapoint) {
     const notification = document.createElement("div");
@@ -110,22 +149,22 @@ function App() {
     return /* @__PURE__ */ jsxDEV("div", { className: "game-container", children: [
       /* @__PURE__ */ jsxDEV("h1", { className: "title", children: "What's Your Super Power?" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 138,
+        lineNumber: 185,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "loading-spinner" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 139,
+        lineNumber: 186,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("p", { className: "text-center mt-4", children: "Connecting to the cosmic database..." }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 140,
+        lineNumber: 187,
         columnNumber: 17
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 137,
+      lineNumber: 184,
       columnNumber: 13
     }, this);
   }
@@ -133,18 +172,18 @@ function App() {
     return /* @__PURE__ */ jsxDEV("div", { className: "game-container", children: [
       /* @__PURE__ */ jsxDEV("h1", { className: "title", children: "What's Your Super Power?" }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 148,
+        lineNumber: 195,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "queue-status", children: [
         /* @__PURE__ */ jsxDEV("h2", { className: "text-2xl font-bold mb-4", children: "Choose Your Identity" }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 150,
+          lineNumber: 197,
           columnNumber: 21
         }, this),
         /* @__PURE__ */ jsxDEV("p", { className: "mb-4", children: "Tell the AI what you want to be, and it will generate your unique avatar and begin your evolution journey." }, void 0, false, {
           fileName: "<stdin>",
-          lineNumber: 151,
+          lineNumber: 198,
           columnNumber: 21
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "input-group", children: [
@@ -163,7 +202,7 @@ function App() {
             false,
             {
               fileName: "<stdin>",
-              lineNumber: 154,
+              lineNumber: 201,
               columnNumber: 25
             },
             this
@@ -180,31 +219,31 @@ function App() {
             false,
             {
               fileName: "<stdin>",
-              lineNumber: 163,
+              lineNumber: 210,
               columnNumber: 25
             },
             this
           )
         ] }, void 0, true, {
           fileName: "<stdin>",
-          lineNumber: 153,
+          lineNumber: 200,
           columnNumber: 21
         }, this)
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 149,
+        lineNumber: 196,
         columnNumber: 17
       }, this)
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 147,
+      lineNumber: 194,
       columnNumber: 13
     }, this);
   }
   return /* @__PURE__ */ jsxDEV("div", { className: "game-container", children: [
     /* @__PURE__ */ jsxDEV("h1", { className: "title", children: "What's Your Super Power?" }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 178,
+      lineNumber: 225,
       columnNumber: 13
     }, this),
     userAvatar && /* @__PURE__ */ jsxDEV("div", { className: "text-center", children: [
@@ -224,14 +263,14 @@ function App() {
         false,
         {
           fileName: "<stdin>",
-          lineNumber: 182,
+          lineNumber: 229,
           columnNumber: 21
         },
         this
       ),
       /* @__PURE__ */ jsxDEV("h2", { className: "text-2xl font-bold mt-4", children: userAvatar.identity }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 192,
+        lineNumber: 239,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV("p", { className: "text-lg", children: [
@@ -239,7 +278,7 @@ function App() {
         userAvatar.evolution_level
       ] }, void 0, true, {
         fileName: "<stdin>",
-        lineNumber: 193,
+        lineNumber: 240,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "evolution-progress", children: /* @__PURE__ */ jsxDEV(
@@ -252,34 +291,82 @@ function App() {
         false,
         {
           fileName: "<stdin>",
-          lineNumber: 196,
+          lineNumber: 243,
           columnNumber: 25
         },
         this
       ) }, void 0, false, {
         fileName: "<stdin>",
-        lineNumber: 195,
+        lineNumber: 242,
         columnNumber: 21
       }, this),
-      /* @__PURE__ */ jsxDEV(
+      isEvolutionOnCooldown ? /* @__PURE__ */ jsxDEV("div", { className: "mt-4", children: [
+        /* @__PURE__ */ jsxDEV("div", { className: "cooldown-indicator mb-2", children: [
+          /* @__PURE__ */ jsxDEV("div", { className: "text-sm text-gray-300 mb-1", children: "Next evolution available in:" }, void 0, false, {
+            fileName: "<stdin>",
+            lineNumber: 252,
+            columnNumber: 33
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "text-2xl font-bold text-cyan-400", children: formatCooldownTime(evolutionCooldown) }, void 0, false, {
+            fileName: "<stdin>",
+            lineNumber: 253,
+            columnNumber: 33
+          }, this)
+        ] }, void 0, true, {
+          fileName: "<stdin>",
+          lineNumber: 251,
+          columnNumber: 29
+        }, this),
+        /* @__PURE__ */ jsxDEV(
+          "button",
+          {
+            className: "generate-btn opacity-50 cursor-not-allowed",
+            disabled: true,
+            children: "Evolution Cooldown"
+          },
+          void 0,
+          false,
+          {
+            fileName: "<stdin>",
+            lineNumber: 257,
+            columnNumber: 29
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "<stdin>",
+        lineNumber: 250,
+        columnNumber: 25
+      }, this) : /* @__PURE__ */ jsxDEV(
         "button",
         {
-          className: "generate-btn mt-4",
+          className: "generate-btn mt-4 evolution-ready",
           onClick: handleEvolution,
-          children: "Evolve Now"
+          children: /* @__PURE__ */ jsxDEV("span", { className: "flex items-center justify-center", children: [
+            /* @__PURE__ */ jsxDEV("span", { className: "evolution-ready-pulse mr-2" }, void 0, false, {
+              fileName: "<stdin>",
+              lineNumber: 270,
+              columnNumber: 33
+            }, this),
+            "Evolve Now!"
+          ] }, void 0, true, {
+            fileName: "<stdin>",
+            lineNumber: 269,
+            columnNumber: 29
+          }, this)
         },
         void 0,
         false,
         {
           fileName: "<stdin>",
-          lineNumber: 202,
-          columnNumber: 21
+          lineNumber: 265,
+          columnNumber: 25
         },
         this
       )
     ] }, void 0, true, {
       fileName: "<stdin>",
-      lineNumber: 181,
+      lineNumber: 228,
       columnNumber: 17
     }, this),
     userDatapoints && userDatapoints.length > 0 && /* @__PURE__ */ jsxDEV("div", { className: "datapoints-grid", children: userDatapoints.map((datapoint) => /* @__PURE__ */ jsxDEV(
@@ -293,7 +380,7 @@ function App() {
         children: [
           /* @__PURE__ */ jsxDEV("div", { className: "datapoint-name", children: datapoint.name }, void 0, false, {
             fileName: "<stdin>",
-            lineNumber: 222,
+            lineNumber: 289,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "datapoint-value", children: [
@@ -302,7 +389,7 @@ function App() {
             datapoint.value
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 223,
+            lineNumber: 290,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "text-xs mt-2", children: [
@@ -311,7 +398,7 @@ function App() {
             "%"
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 226,
+            lineNumber: 293,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "text-xs", children: [
@@ -320,7 +407,7 @@ function App() {
             "%"
           ] }, void 0, true, {
             fileName: "<stdin>",
-            lineNumber: 229,
+            lineNumber: 296,
             columnNumber: 29
           }, this)
         ]
@@ -329,33 +416,33 @@ function App() {
       true,
       {
         fileName: "<stdin>",
-        lineNumber: 214,
+        lineNumber: 281,
         columnNumber: 25
       },
       this
     )) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 212,
+      lineNumber: 279,
       columnNumber: 17
     }, this),
     (!userDatapoints || userDatapoints.length === 0) && !datapointsLoading && /* @__PURE__ */ jsxDEV("div", { className: "text-center mt-8", children: /* @__PURE__ */ jsxDEV("p", { className: "text-lg", children: "No datapoints yet. Your evolution journey is about to begin!" }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 239,
+      lineNumber: 306,
       columnNumber: 21
     }, this) }, void 0, false, {
       fileName: "<stdin>",
-      lineNumber: 238,
+      lineNumber: 305,
       columnNumber: 17
     }, this)
   ] }, void 0, true, {
     fileName: "<stdin>",
-    lineNumber: 177,
+    lineNumber: 224,
     columnNumber: 9
   }, this);
 }
 const root = createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ jsxDEV(App, {}, void 0, false, {
   fileName: "<stdin>",
-  lineNumber: 247,
+  lineNumber: 314,
   columnNumber: 13
 }));
